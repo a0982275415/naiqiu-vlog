@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>奶球 Vlog</title>
+<meta name="theme-color" content="#FAF3E7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="奶球 Vlog">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/style.css?v=61">
+</head>
+<body>
+
+<!-- ========== 拍攝頁 ========== -->
+<main id="view-capture" class="view view-dark active">
+  <video id="cam-preview" playsinline autoplay muted></video>
+  <span class="finder-corner fc-tl"></span>
+  <span class="finder-corner fc-tr"></span>
+  <span class="finder-corner fc-bl"></span>
+  <span class="finder-corner fc-br"></span>
+  <div id="cam-fallback" class="cam-fallback" hidden>
+    <h2>需要相機權限</h2>
+    <p>到「設定 → Safari →（或此 App）→ 相機」選擇允許，然後回來按重試。</p>
+    <button id="btn-cam-retry" class="btn-secondary">重試</button>
+  </div>
+  <!-- 成品疊字預覽：跟生成的影片同一排版（Vlog｜字幕｜時間） -->
+  <div class="shot-overlay" aria-hidden="true">
+    <span class="shot-brand">Vlog</span>
+    <span id="shot-sub" class="shot-sub"></span>
+    <span id="shot-time" class="shot-time"></span>
+  </div>
+  <div id="countdown" class="countdown" hidden></div>
+  <div class="rec-bar" aria-hidden="true"><i></i></div>
+  <div class="cam-controls safe-bottom">
+    <button id="btn-flash" class="cam-side ghost" aria-label="閃光燈">
+      <svg viewBox="0 0 12 12" fill="currentColor"><path d="M7 1H4L3 7h2l-1 4 5-6H6z"/></svg>
+    </button>
+    <button id="btn-timer" class="cam-side" aria-label="倒數計時">
+      <svg viewBox="0 0 12 12" fill="currentColor"><rect x="5" y="0" width="2" height="2"/><path d="M6 2a5 5 0 1 0 0 10A5 5 0 0 0 6 2zm0 8a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/><rect x="5" y="4" width="2" height="3"/></svg>
+      <small id="timer-label"></small>
+    </button>
+    <button id="btn-record" aria-label="錄影 2 秒">
+      <img class="sprite" src="assets/rec-btn.png" alt="">
+    </button>
+    <button id="btn-lens" class="cam-side" aria-label="切換遠近">
+      <small id="lens-label" class="lens-x">.5×</small>
+    </button>
+    <button id="btn-flip" class="cam-side" aria-label="切換前後鏡頭">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4.5 10a7.5 7.5 0 0 1 12.4-3.6L19 8.5"/>
+        <path d="M19.5 14a7.5 7.5 0 0 1-12.4 3.6L5 15.5"/>
+        <path d="M19 4.5V9h-4.5"/>
+        <path d="M5 19.5V15h4.5"/>
+      </svg>
+    </button>
+  </div>
+</main>
+
+<!-- ========== 今天 ========== -->
+<main id="view-today" class="view">
+  <header class="page-head safe-top today-head">
+    <img class="deco-flowers" src="assets/corner-flowers-r.png" alt="">
+    <div class="day-stamp">
+      <b id="stamp-num"></b>
+      <div class="day-stamp-sub">
+        <span id="stamp-month"></span>
+        <span id="stamp-count"></span>
+      </div>
+    </div>
+    <button id="btn-import" class="pill-btn" aria-label="從相簿匯入照片或影片">
+      <svg viewBox="0 0 12 12" fill="currentColor"><rect x="5" y="1" width="2" height="5"/><rect x="3" y="4" width="2" height="2"/><rect x="7" y="4" width="2" height="2"/><rect x="1" y="8" width="10" height="3"/></svg>匯入
+    </button>
+  </header>
+  <input type="file" id="import-input" accept="video/*,image/*" multiple hidden>
+  <div class="flower-nav">
+    <button class="flower-arrow" data-dir="-1" aria-label="往前看片段"><svg viewBox="0 0 12 12" fill="currentColor"><rect x="6" y="1" width="2" height="2"/><rect x="4" y="3" width="2" height="2"/><rect x="2" y="5" width="2" height="2"/><rect x="4" y="7" width="2" height="2"/><rect x="6" y="9" width="2" height="2"/></svg></button>
+    <div id="flower-row" class="flower-row"></div>
+    <button class="flower-arrow" data-dir="1" aria-label="往後看片段"><svg viewBox="0 0 12 12" fill="currentColor"><rect x="4" y="1" width="2" height="2"/><rect x="6" y="3" width="2" height="2"/><rect x="8" y="5" width="2" height="2"/><rect x="6" y="7" width="2" height="2"/><rect x="4" y="9" width="2" height="2"/></svg></button>
+  </div>
+  <div id="clip-stage" class="clip-stage" hidden>
+    <span class="tape"></span>
+    <div class="stage-frame">
+      <video id="stage-video" class="stage-v on" playsinline muted autoplay></video>
+      <video id="stage-video-b" class="stage-v" playsinline muted autoplay></video>
+      <div class="shot-overlay in-stage" aria-hidden="true">
+        <span class="shot-brand">Vlog</span>
+        <span id="stage-sub" class="shot-sub"></span>
+        <span id="stage-time" class="shot-time"></span>
+      </div>
+    </div>
+    <div class="stage-caption">
+      <button id="stage-more" class="clip-more" aria-label="片段選項">⋯</button>
+    </div>
+  </div>
+  <div id="today-empty" class="empty" hidden>
+    <img class="sprite" src="assets/s-camera.png" alt="">
+    <p>今天還沒有片段</p>
+    <p class="empty-sub">到「拍攝」按一下紅色鈕，錄下今天的第一個 2 秒。<br>相簿裡的照片或影片，也可以按右上角「匯入」。</p>
+  </div>
+  <div class="gen-bar safe-bottom-bar">
+    <div class="orient-toggle" role="group" aria-label="影片方向">
+      <button data-orient="portrait" class="active">直式</button>
+      <button data-orient="landscape">橫式</button>
+    </div>
+    <button id="btn-generate" class="btn-primary">生成今日 Vlog</button>
+    <button id="btn-regen" class="text-btn" hidden>重新合成一次</button>
+  </div>
+  <p class="ver-tag" style="text-align:center;color:#C9B49C;font-size:11px;margin:6px 0 0;">v61</p>
+</main>
+
+<!-- ========== 日記（月曆） ========== -->
+<main id="view-diary" class="view">
+  <header class="page-head safe-top cal-head">
+    <button id="cal-prev" class="icon-btn" aria-label="上個月"><svg viewBox="0 0 12 12" fill="currentColor"><rect x="6" y="1" width="2" height="2"/><rect x="4" y="3" width="2" height="2"/><rect x="2" y="5" width="2" height="2"/><rect x="4" y="7" width="2" height="2"/><rect x="6" y="9" width="2" height="2"/></svg></button>
+    <h1 id="cal-title"></h1>
+    <button id="cal-next" class="icon-btn" aria-label="下個月"><svg viewBox="0 0 12 12" fill="currentColor"><rect x="4" y="1" width="2" height="2"/><rect x="6" y="3" width="2" height="2"/><rect x="8" y="5" width="2" height="2"/><rect x="6" y="7" width="2" height="2"/><rect x="4" y="9" width="2" height="2"/></svg></button>
+  </header>
+  <div class="cal-week">
+    <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+  </div>
+  <div id="cal-grid" class="cal-grid"></div>
+  <button id="btn-feedback" class="pill-btn feedback-btn">
+    <svg viewBox="0 0 12 12" fill="currentColor"><path d="M1 2h10v7H6l-3 2v-2H1z"/></svg>給我意見
+  </button>
+  <p class="ver-tag" style="text-align:center;color:#C9B49C;font-size:12px;margin:8px 0 0;">版本 v61</p>
+</main>
+
+<!-- ========== 日頁 ========== -->
+<main id="view-day" class="view">
+  <header class="page-head safe-top day-head">
+    <img class="deco-flowers" src="assets/corner-flowers-r.png" alt="">
+    <button id="day-back" class="pill-btn" aria-label="回到月曆">
+      <svg viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="1" width="4" height="4"/><rect x="7" y="1" width="4" height="4"/><rect x="1" y="7" width="4" height="4"/><rect x="7" y="7" width="4" height="4"/></svg>月曆
+    </button>
+    <button id="day-prev" class="day-nav-btn" aria-label="前一天"><svg viewBox="0 0 12 12" fill="currentColor"><rect x="6" y="1" width="2" height="2"/><rect x="4" y="3" width="2" height="2"/><rect x="2" y="5" width="2" height="2"/><rect x="4" y="7" width="2" height="2"/><rect x="6" y="9" width="2" height="2"/></svg></button>
+    <h1 id="day-title"></h1>
+    <button id="day-next" class="day-nav-btn" aria-label="後一天"><svg viewBox="0 0 12 12" fill="currentColor"><rect x="4" y="1" width="2" height="2"/><rect x="6" y="3" width="2" height="2"/><rect x="8" y="5" width="2" height="2"/><rect x="6" y="7" width="2" height="2"/><rect x="4" y="9" width="2" height="2"/></svg></button>
+    <button id="btn-day-import" class="pill-btn" aria-label="匯入照片或影片到這一天">
+      <svg viewBox="0 0 12 12" fill="currentColor"><rect x="5" y="1" width="2" height="5"/><rect x="3" y="4" width="2" height="2"/><rect x="7" y="4" width="2" height="2"/><rect x="1" y="8" width="10" height="3"/></svg>匯入
+    </button>
+  </header>
+  <div class="day-scroll">
+    <section>
+      <div class="flower-nav">
+        <button class="flower-arrow" data-dir="-1" aria-label="往前看片段"><svg viewBox="0 0 12 12" fill="currentColor"><rect x="6" y="1" width="2" height="2"/><rect x="4" y="3" width="2" height="2"/><rect x="2" y="5" width="2" height="2"/><rect x="4" y="7" width="2" height="2"/><rect x="6" y="9" width="2" height="2"/></svg></button>
+        <div id="day-flower-row" class="flower-row"></div>
+        <button class="flower-arrow" data-dir="1" aria-label="往後看片段"><svg viewBox="0 0 12 12" fill="currentColor"><rect x="4" y="1" width="2" height="2"/><rect x="6" y="3" width="2" height="2"/><rect x="8" y="5" width="2" height="2"/><rect x="6" y="7" width="2" height="2"/><rect x="4" y="9" width="2" height="2"/></svg></button>
+      </div>
+      <div id="day-clip-stage" class="clip-stage" hidden>
+        <span class="tape"></span>
+        <div class="stage-frame">
+          <video id="day-stage-video" class="stage-v on" playsinline muted autoplay></video>
+          <video id="day-stage-video-b" class="stage-v" playsinline muted autoplay></video>
+          <div class="shot-overlay in-stage" aria-hidden="true">
+            <span class="shot-brand">Vlog</span>
+            <span id="day-stage-sub" class="shot-sub"></span>
+            <span id="day-stage-time" class="shot-time"></span>
+          </div>
+        </div>
+        <div class="stage-caption">
+          <button id="day-stage-more" class="clip-more" aria-label="片段選項">⋯</button>
+        </div>
+      </div>
+      <p id="day-nostrip" class="empty-sub" hidden>這天沒有片段。</p>
+    </section>
+    <section class="day-save-bar">
+      <div class="orient-toggle" role="group" aria-label="影片方向">
+        <button data-orient="portrait" class="active">直式</button>
+        <button data-orient="landscape">橫式</button>
+      </div>
+      <button id="btn-day-generate" class="btn-primary">儲存這天的 Vlog</button>
+      <button id="btn-day-regen" class="text-btn" hidden>重新合成一次</button>
+      <p class="ver-tag" style="text-align:center;color:#C9B49C;font-size:11px;margin:6px 0 0;">v61</p>
+    </section>
+    <section class="diary-sec">
+      <h2 class="sec-label"><img class="sprite" src="assets/s-book.png" alt="">日記 <small id="diary-saved"></small></h2>
+      <textarea id="diary-text" placeholder="這天發生了什麼？點這裡開始寫，停筆會自動儲存。"></textarea>
+      <img class="diary-flower" src="assets/s-flower.png" alt="">
+    </section>
+  </div>
+</main>
+
+<!-- ========== 底部分頁 ========== -->
+<nav class="tabbar safe-bottom" aria-label="主要導覽">
+  <button data-tab="capture" class="tab active">
+    <img class="sprite" src="assets/t-camera.png" alt="">
+    <span>拍攝</span>
+  </button>
+  <button data-tab="today" class="tab">
+    <img class="sprite" src="assets/t-today.png" alt="">
+    <span>今天</span>
+  </button>
+  <button data-tab="diary" class="tab">
+    <img class="sprite" src="assets/t-diary.png" alt="">
+    <span>日記</span>
+  </button>
+</nav>
+
+<!-- ========== 共用元件 ========== -->
+<div id="toast" class="toast" hidden><span id="toast-msg"></span><button id="toast-action" hidden></button></div>
+
+<div id="dialog" class="overlay" hidden>
+  <div class="sheet dialog">
+    <p id="dialog-msg"></p>
+    <div class="dialog-btns">
+      <button id="dialog-cancel" class="btn-secondary">取消</button>
+      <button id="dialog-ok" class="btn-danger">確定</button>
+    </div>
+  </div>
+</div>
+
+<div id="subtitle-sheet" class="overlay" hidden>
+  <div class="sheet">
+    <h2>這 2 秒的一句話</h2>
+    <input type="text" id="subtitle-input" maxlength="30" placeholder="例如：今天的天空好好看" autocomplete="off">
+    <div class="dialog-btns">
+      <button id="subtitle-cancel" class="btn-secondary">取消</button>
+      <button id="subtitle-save" class="btn-primary">儲存</button>
+    </div>
+  </div>
+</div>
+
+<div id="clip-menu" class="overlay" hidden>
+  <div class="sheet menu-sheet">
+    <button id="menu-edit" class="menu-item">
+      <svg viewBox="0 0 12 12" fill="currentColor"><rect x="8" y="1" width="3" height="3"/><rect x="6" y="3" width="3" height="3"/><rect x="4" y="5" width="3" height="3"/><rect x="1" y="8" width="3" height="3"/></svg>編輯字幕
+    </button>
+    <button id="menu-save" class="menu-item">
+      <svg viewBox="0 0 12 12" fill="currentColor"><rect x="5" y="1" width="2" height="6"/><rect x="3" y="5" width="2" height="2"/><rect x="7" y="5" width="2" height="2"/><rect x="1" y="9" width="10" height="2"/></svg>儲存到相簿
+    </button>
+    <button id="menu-delete" class="menu-item danger">
+      <svg viewBox="0 0 12 12" fill="currentColor"><rect x="2" y="3" width="8" height="2"/><rect x="4" y="1" width="4" height="2"/><rect x="3" y="6" width="6" height="5"/></svg>刪除
+    </button>
+    <button id="menu-cancel" class="menu-item">取消</button>
+  </div>
+</div>
+
+<div id="player" class="overlay dark" hidden>
+  <video id="player-video" playsinline loop></video>
+  <button id="player-close" class="player-close" aria-label="關閉"><svg viewBox="0 0 12 12" fill="currentColor"><rect x="1" y="1" width="2" height="2"/><rect x="3" y="3" width="2" height="2"/><rect x="5" y="5" width="2" height="2"/><rect x="7" y="7" width="2" height="2"/><rect x="9" y="9" width="2" height="2"/><rect x="9" y="1" width="2" height="2"/><rect x="7" y="3" width="2" height="2"/><rect x="3" y="7" width="2" height="2"/><rect x="1" y="9" width="2" height="2"/></svg></button>
+</div>
+
+<div id="trim-sheet" class="overlay" hidden>
+  <div class="sheet trim">
+    <h2>選 2 秒</h2>
+    <video id="trim-video" playsinline muted loop></video>
+    <input type="range" id="trim-range" min="0" max="0" step="0.1" value="0">
+    <p class="trim-hint"><b id="trim-range-label"></b>　拖滑桿選起點，上面會重複播放選到的 2 秒；確認後才會匯入。</p>
+    <div class="dialog-btns">
+      <button id="trim-cancel" class="btn-secondary">取消</button>
+      <button id="trim-ok" class="btn-primary">就是這 2 秒</button>
+    </div>
+  </div>
+</div>
+
+<div id="gen-overlay" class="overlay dark col" hidden>
+  <img class="sprite" src="assets/sprite-baby-alpha.png" alt="" onerror="this.hidden=true">
+  <div class="px-progress"><i id="gen-bar-fill"></i></div>
+  <p id="gen-status">準備中…</p>
+  <button id="gen-cancel" class="btn-secondary">取消</button>
+  <div id="gen-done" hidden>
+    <p id="gen-done-msg">完成！</p>
+    <button id="btn-save-album" class="btn-primary big">儲存影片</button>
+    <button id="gen-close" class="btn-secondary">先不用</button>
+  </div>
+</div>
+
+<div id="feedback-sheet" class="overlay" hidden>
+  <div class="sheet">
+    <h2>給我意見</h2>
+    <input type="text" id="fb-name" maxlength="12" placeholder="你的名字（可不填）" autocomplete="off">
+    <textarea id="fb-text" maxlength="500" placeholder="用起來有什麼想法、卡住的地方、想要的功能，都跟我說！"></textarea>
+    <div class="dialog-btns">
+      <button id="fb-cancel" class="btn-secondary">取消</button>
+      <button id="fb-send" class="btn-primary">送出</button>
+    </div>
+  </div>
+</div>
+
+<div id="firstrun" class="overlay" hidden>
+  <div class="sheet">
+    <h2>歡迎！先做這兩件事</h2>
+    <div class="install-guide" id="install-guide">
+      <b>一、把它裝成 App（用起來才順）</b>
+      <ol>
+        <li>點 Safari 下方（或右上角<b>⋯</b>）的<b>分享</b>按鈕</li>
+        <li>往下滑，點<b>「檢視較多」</b></li>
+        <li>選<b>「加入主畫面」</b></li>
+      </ol>
+      <p class="guide-note">裝好之後從主畫面打開，會是全螢幕、沒有網址列。</p>
+    </div>
+    <p><b>二、影片記得存相簿</b><br>片段都存在這支手機裡，<strong>生成的影片記得按「儲存到相簿」</strong>，換手機或清瀏覽器資料時才不會不見。</p>
+    <div class="dialog-btns">
+      <button id="firstrun-ok" class="btn-primary">知道了</button>
+    </div>
+  </div>
+</div>
+
+<script src="vendor/mp4box.all.min.js"></script>
+<script src="vendor/mp4-muxer.min.js"></script>
+<script src="js/db.js?v=61"></script>
+<script src="js/encode.js?v=61"></script>
+<script src="js/encode2.js?v=61"></script>
+<script src="js/app.js?v=61"></script>
+</body>
+</html>
